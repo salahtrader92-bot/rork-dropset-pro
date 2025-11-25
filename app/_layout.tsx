@@ -5,17 +5,16 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppStateProvider, useAppState } from "@/providers/AppStateProvider";
 import { WorkoutProvider } from "@/providers/WorkoutProvider";
-import { GamificationProvider } from "@/providers/GamificationProvider";
-import { ThemeProvider, useTheme } from "@/providers/ThemeProvider";
-import { trpc, trpcClient } from "@/lib/trpc";
+import * as SystemUI from "expo-system-ui";
+import COLORS from "@/constants/colors";
 
 SplashScreen.preventAutoHideAsync();
+SystemUI.setBackgroundColorAsync(COLORS.background);
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   const { isOnboarded, isLoading } = useAppState();
-  const { colors } = useTheme();
   const segments = useSegments();
   const router = useRouter();
 
@@ -42,11 +41,11 @@ function RootLayoutNav() {
       screenOptions={{
         headerBackTitle: "Back",
         headerStyle: {
-          backgroundColor: colors.background,
+          backgroundColor: COLORS.background,
         },
-        headerTintColor: colors.text,
+        headerTintColor: COLORS.text,
         contentStyle: {
-          backgroundColor: colors.background,
+          backgroundColor: COLORS.background,
         },
       }}
     >
@@ -58,20 +57,14 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <ThemeProvider>
-            <AppStateProvider>
-              <WorkoutProvider>
-                <GamificationProvider>
-                  <RootLayoutNav />
-                </GamificationProvider>
-              </WorkoutProvider>
-            </AppStateProvider>
-          </ThemeProvider>
-        </GestureHandlerRootView>
-      </QueryClientProvider>
-    </trpc.Provider>
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AppStateProvider>
+          <WorkoutProvider>
+            <RootLayoutNav />
+          </WorkoutProvider>
+        </AppStateProvider>
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }
