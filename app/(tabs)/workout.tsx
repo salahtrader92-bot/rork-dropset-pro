@@ -1,15 +1,17 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, TextInput, FlatList } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAppState } from "@/providers/AppStateProvider";
 import { useWorkouts } from "@/providers/WorkoutProvider";
-import COLORS from "@/constants/colors";
-import { Plus, Dumbbell, Clock, Search, Menu, User, Play } from "lucide-react-native";
+import darkColors from "@/constants/colors";
+import { Menu, User, Play, Users2, Sparkles } from "lucide-react-native";
 import { EXERCISES } from "@/constants/exercises";
 import { Exercise, WorkoutExercise } from "@/types";
 import { generateId } from "@/utils/calculations";
 import { LinearGradient } from "expo-linear-gradient";
+
+const COLORS = darkColors;
 
 export default function WorkoutScreen() {
   const insets = useSafeAreaInsets();
@@ -45,13 +47,17 @@ export default function WorkoutScreen() {
     router.push("/workout-session" as never);
   };
 
-  const muscleGroups = ["All", "Chest", "Back", "Shoulders", "Biceps", "Triceps", "Quadriceps", "Hamstrings", "Glutes", "Calves", "Abs"];
-
   const filteredExercises = EXERCISES.filter((exercise) => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesMuscle = selectedMuscle === "All" || exercise.muscleGroup.toLowerCase() === selectedMuscle.toLowerCase();
     return matchesSearch && matchesMuscle;
   }).slice(0, 6);
+
+  const handleOpenPartnerSync = () => {
+    console.log("Navigating to Partner Sync Mode preview");
+    setSearchQuery("");
+    setSelectedMuscle("All");
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -102,7 +108,7 @@ export default function WorkoutScreen() {
           </View>
           
           <View style={styles.workoutContent}>
-            <Text style={styles.workoutLabel}>Today's Workout</Text>
+            <Text style={styles.workoutLabel}>Today’s Workout</Text>
             <Text style={styles.workoutTitle}>Push Day A</Text>
             <Text style={styles.workoutExercises}>
               Bench Press, Overhead Press, Tricep Pushdown...
@@ -116,6 +122,43 @@ export default function WorkoutScreen() {
             <Play size={16} color={COLORS.background} fill={COLORS.background} />
             <Text style={styles.startButtonText}>Start Workout</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.newOptionSection}>
+          <LinearGradient
+            colors={["#0b1c18", "#132f27", "#1f473b"]}
+            style={styles.partnerCard}
+            testID="partner-sync-card"
+          >
+            <View style={styles.partnerHeaderRow}>
+              <View style={styles.partnerBadge}>
+                <Sparkles size={14} color={COLORS.primary} />
+                <Text style={styles.partnerBadgeText}>New Option</Text>
+              </View>
+              <Text style={styles.partnerBetaPill}>Beta</Text>
+            </View>
+            <View style={styles.partnerTitleRow}>
+              <Users2 size={24} color={COLORS.background} />
+              <View style={styles.partnerTitleContent}>
+                <Text style={styles.partnerHeadline}>Partner Sync Mode</Text>
+                <Text style={styles.partnerSubline}>
+                  Link with a friend for mirrored pacing, live cues, and adaptive intensity suggestions.
+                </Text>
+              </View>
+            </View>
+            <View style={styles.partnerChipsRow}>
+              <Text style={styles.partnerChip}>Live stats</Text>
+              <Text style={styles.partnerChip}>Rep mirroring</Text>
+              <Text style={styles.partnerChip}>AI cues</Text>
+            </View>
+            <TouchableOpacity
+              testID="enable-partner-sync"
+              style={styles.partnerButton}
+              onPress={handleOpenPartnerSync}
+            >
+              <Text style={styles.partnerButtonText}>Enable Partner Sync</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
 
         <View style={styles.section}>
@@ -327,6 +370,11 @@ const styles = StyleSheet.create({
     fontWeight: "700" as const,
     color: COLORS.background,
   },
+  newOptionSection: {
+    marginBottom: 24,
+    borderRadius: 24,
+    overflow: "hidden" as const,
+  },
   section: {
     marginBottom: 24,
   },
@@ -353,6 +401,83 @@ const styles = StyleSheet.create({
     width: "100%" as const,
     height: "100%" as const,
     backgroundColor: COLORS.backgroundTertiary,
+  },
+  partnerCard: {
+    padding: 24,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    gap: 16,
+  },
+  partnerHeaderRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+  },
+  partnerBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  partnerBadgeText: {
+    color: COLORS.background,
+    fontSize: 12,
+    fontWeight: "600" as const,
+  },
+  partnerBetaPill: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: "700" as const,
+    letterSpacing: 1,
+    textTransform: "uppercase" as const,
+  },
+  partnerTitleRow: {
+    flexDirection: "row" as const,
+    gap: 16,
+  },
+  partnerTitleContent: {
+    flex: 1,
+  },
+  partnerHeadline: {
+    fontSize: 22,
+    fontWeight: "800" as const,
+    color: COLORS.background,
+    marginBottom: 6,
+  },
+  partnerSubline: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.8)",
+    lineHeight: 20,
+  },
+  partnerChipsRow: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: 8,
+  },
+  partnerChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    color: COLORS.background,
+    fontSize: 12,
+    fontWeight: "600" as const,
+  },
+  partnerButton: {
+    backgroundColor: COLORS.background,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center" as const,
+  },
+  partnerButtonText: {
+    color: COLORS.card,
+    fontSize: 15,
+    fontWeight: "700" as const,
   },
   exercisePreviewOverlay: {
     position: "absolute" as const,
