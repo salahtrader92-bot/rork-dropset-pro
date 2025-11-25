@@ -7,6 +7,7 @@ import { AppStateProvider, useAppState } from "@/providers/AppStateProvider";
 import { WorkoutProvider } from "@/providers/WorkoutProvider";
 import * as SystemUI from "expo-system-ui";
 import COLORS from "@/constants/colors";
+import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
 SystemUI.setBackgroundColorAsync(COLORS.background);
@@ -57,14 +58,16 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <AppStateProvider>
-          <WorkoutProvider>
-            <RootLayoutNav />
-          </WorkoutProvider>
-        </AppStateProvider>
-      </GestureHandlerRootView>
-    </QueryClientProvider>
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AppStateProvider>
+            <WorkoutProvider>
+              <RootLayoutNav />
+            </WorkoutProvider>
+          </AppStateProvider>
+        </GestureHandlerRootView>
+      </QueryClientProvider>
+    </trpc.Provider>
   );
 }
