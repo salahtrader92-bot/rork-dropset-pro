@@ -5,6 +5,7 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppStateProvider, useAppState } from "@/providers/AppStateProvider";
 import { WorkoutProvider } from "@/providers/WorkoutProvider";
+import { GamificationProvider } from "@/providers/GamificationProvider";
 import * as SystemUI from "expo-system-ui";
 import COLORS from "@/constants/colors";
 import { trpc, trpcClient } from "@/lib/trpc";
@@ -63,7 +64,9 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <AppStateProvider>
             <WorkoutProvider>
-              <RootLayoutNav />
+              <GamificationProvider>
+                <RootLayoutNav />
+              </GamificationProvider>
             </WorkoutProvider>
           </AppStateProvider>
         </GestureHandlerRootView>
