@@ -1,67 +1,45 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useWorkouts } from "@/providers/WorkoutProvider";
+import { formatDuration } from "@/utils/calculations";
+import { Workout } from "@/types";
 import COLORS from "@/constants/colors";
 import { ChevronLeft, Menu, Dumbbell, TrendingUp } from "lucide-react-native";
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { workouts } = useWorkouts();
 
-  const workouts = [
-    {
-      id: 1,
-      title: "Push Day",
-      exercises: "Bench Press, Squat, Overhead Press...",
-      date: "Jan 28, 2024",
-      duration: "45 min",
-      volume: "12,500 lbs",
-      section: "THIS WEEK"
-    },
-    {
-      id: 2,
-      title: "Full Body Strength",
-      exercises: "Deadlift, Pull-ups, Leg Press...",
-      date: "Jan 26, 2024",
-      duration: "60 min",
-      volume: "15,200 lbs",
-      section: "THIS WEEK"
-    },
-    {
-      id: 3,
-      title: "Leg Day",
-      exercises: "Squats, Lunges, Calf Raises...",
-      date: "Jan 24, 2024",
-      duration: "55 min",
-      volume: "18,000 lbs",
-      section: "THIS WEEK"
-    },
-    {
-      id: 4,
-      title: "Cardio & Core",
-      exercises: "Treadmill Run, Planks, Crunches...",
-      date: "Jan 22, 2024",
-      duration: "30 min",
-      volume: "3.5 mi",
-      section: "LAST WEEK"
-    },
-    {
-      id: 5,
-      title: "Pull Day",
-      exercises: "Pull-ups, Barbell Rows, Bicep Curls...",
-      date: "Jan 20, 2024",
-      duration: "50 min",
-      volume: "11,800 lbs",
-      section: "LAST WEEK"
-    },
-  ];
+  const groupedWorkouts = useMemo(() => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-  const thisWeekWorkouts = workouts.filter(w => w.section === "THIS WEEK");
-  const lastWeekWorkouts = workouts.filter(w => w.section === "LAST WEEK");
+    const completed = workouts.filter((w) => w.completedAt);
+    const sorted = completed.sort(
+      (a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime()
+    );
+
+    const thisWeek = sorted.filter(
+      (w) => new Date(w.completedAt!) >= oneWeekAgo
+    );
+    const lastWeek = sorted.filter(
+      (w) => new Date(w.completedAt!) >= twoWeeksAgo && new Date(w.completedAt!) < oneWeekAgo
+    );
+    const older = sorted.filter(
+      (w) => new Date(w.completedAt!) < twoWeeksAgo
+    );
+
+    return { thisWeek, lastWeek, older };
+  }, [workouts]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ChevronLeft size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Workout History</Text>
@@ -75,37 +53,71 @@ export default function HistoryScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>THIS WEEK</Text>
-          {thisWeekWorkouts.map((workout) => (
-            <WorkoutCard key={workout.id} workout={workout} />
-          ))}
-        </View>
+        {groupedWorkouts.thisWeek.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>THIS WEEK</Text>
+            {groupedWorkouts.thisWeek.map((workout) => (
+              <WorkoutCard key={workout.id} workout={workout} />
+            ))}
+          </View>
+        )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>LAST WEEK</Text>
-          {lastWeekWorkouts.map((workout) => (
-            <WorkoutCard key={workout.id} workout={workout} />
-          ))}
-        </View>
+        {groupedWorkouts.lastWeek.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>LAST WEEK</Text>
+            {groupedWorkouts.lastWeek.map((workout) => (
+              <WorkoutCard key={workout.id} workout={workout} />
+            ))}
+          </View>
+        )}
+
+        {groupedWorkouts.older.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>OLDER</Text>
+            {groupedWorkouts.older.map((workout) => (
+              <WorkoutCard key={workout.id} workout={workout} />
+            ))}
+          </View>
+        )}
+
+        {workouts.length === 0 && (
+          <View style={styles.emptyState}>
+            <Dumbbell size={48} color={COLORS.textTertiary} />
+            <Text style={styles.emptyStateText}>No workout history yet</Text>
+            <Text style={styles.emptyStateSubtext}>Complete your first workout to see it here</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
 }
 
 interface WorkoutCardProps {
-  workout: {
-    id: number;
-    title: string;
-    exercises: string;
-    date: string;
-    duration: string;
-    volume: string;
-  };
+  workout: Workout;
 }
 
 function WorkoutCard({ workout }: WorkoutCardProps) {
-  const isCardio = workout.title.includes("Cardio");
+  const exerciseNames = workout.exercises
+    .slice(0, 3)
+    .map((ex) => ex.exercise.name)
+    .join(", ");
+  const moreCount = workout.exercises.length - 3;
+  const exercisesText = moreCount > 0 ? `${exerciseNames}... +${moreCount} more` : exerciseNames;
+
+  const date = new Date(workout.completedAt!);
+  const dateStr = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const durationStr = workout.duration ? formatDuration(workout.duration) : "N/A";
+  const volumeStr = `${(workout.totalVolume / 1000).toFixed(1)} kg`;
+
+  const hasCardioExercise = workout.exercises.some(
+    (ex) => ex.exercise.muscleGroup === "cardio"
+  );
+  const isCardio = hasCardioExercise;
   
   return (
     <TouchableOpacity style={styles.workoutCard}>
@@ -118,12 +130,12 @@ function WorkoutCard({ workout }: WorkoutCardProps) {
       </View>
       
       <View style={styles.workoutInfo}>
-        <Text style={styles.workoutTitle}>{workout.title}</Text>
+        <Text style={styles.workoutTitle}>Workout</Text>
         <Text style={styles.workoutExercises} numberOfLines={1}>
-          {workout.exercises}
+          {exercisesText || "No exercises"}
         </Text>
         <Text style={styles.workoutMeta}>
-          {workout.date} • {workout.duration} • {workout.volume}
+          {dateStr} • {durationStr} • {volumeStr}
         </Text>
       </View>
 
@@ -226,5 +238,22 @@ const styles = StyleSheet.create({
     height: 24,
     alignItems: "center" as const,
     justifyContent: "center" as const,
+  },
+  emptyState: {
+    alignItems: "center" as const,
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: COLORS.text,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: "center" as const,
   },
 });
