@@ -3,18 +3,16 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-nati
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useWorkouts } from "@/providers/WorkoutProvider";
-import { calculateOneRepMax } from "@/utils/calculations";
 import COLORS from "@/constants/colors";
 import { ChevronLeft, Share2, Calendar, Dumbbell, ChevronDown } from "lucide-react-native";
-import Svg, { Path } from "react-native-svg";
 
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { workouts, personalRecords } = useWorkouts();
   const [selectedTab, setSelectedTab] = useState<"Overview" | "Strength" | "Volume" | "Consistency">("Overview");
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("Last 30 Days");
-  const [selectedFilter, setSelectedFilter] = useState<string>("All Exercises");
+  const [selectedPeriod] = useState<string>("Last 30 Days");
+  const [selectedFilter] = useState<string>("All Exercises");
 
   const tabs = ["Overview", "Strength", "Volume", "Consistency"];
 
@@ -121,107 +119,219 @@ export default function AnalyticsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Total Workouts</Text>
-            <Text style={styles.statValue}>{analytics.totalWorkouts}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Longest Streak</Text>
-            <Text style={styles.statValue}>{analytics.longestStreak} Days</Text>
-          </View>
-        </View>
-
-        <View style={styles.volumeCard}>
-          <Text style={styles.volumeLabel}>Total Volume Lifted</Text>
-          <Text style={styles.volumeValue}>
-            {(analytics.totalVolume / 1000).toFixed(1)} kg
-          </Text>
-        </View>
-
-        {analytics.topPR && (
-          <View style={styles.progressCard}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressTitle}>Top Personal Record</Text>
-              <View style={styles.prBadge}>
-                <Text style={styles.prBadgeText}>🏆 Best PR</Text>
+        {selectedTab === "Overview" && (
+          <>
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Total Workouts</Text>
+                <Text style={styles.statValue}>{analytics.totalWorkouts}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Longest Streak</Text>
+                <Text style={styles.statValue}>{analytics.longestStreak} Days</Text>
               </View>
             </View>
-            
-            <Text style={styles.exerciseName}>Exercise ID: {analytics.topPR.exerciseId}</Text>
-            <Text style={styles.prValue}>
-              {analytics.topPR.weight} kg × {analytics.topPR.reps} reps
-            </Text>
-            
-            <View style={styles.prChange}>
-              <Text style={styles.prChangeLabel}>Est. 1RM</Text>
-              <Text style={styles.prChangeValue}>
-                {analytics.topPR.oneRepMax.toFixed(1)} kg
+
+            <View style={styles.volumeCard}>
+              <Text style={styles.volumeLabel}>Total Volume Lifted</Text>
+              <Text style={styles.volumeValue}>
+                {(analytics.totalVolume / 1000).toFixed(1)} kg
               </Text>
             </View>
 
-            <View style={styles.chartContainer}>
-              <Svg width="100%" height="160" viewBox="0 0 440 160">
-                <Path
-                  d="M 20 120 Q 50 80, 90 90 T 160 70 T 240 85 T 310 45 T 400 65"
-                  stroke={COLORS.primary}
-                  strokeWidth="3"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-              </Svg>
-              <View style={styles.chartLabels}>
-                <Text style={styles.chartLabel}>4 Wks Ago</Text>
-                <Text style={styles.chartLabel}>2 Wks Ago</Text>
-                <Text style={styles.chartLabel}>Today</Text>
+            <View style={styles.overviewSummary}>
+              <Text style={styles.sectionTitle}>Quick Overview</Text>
+              <View style={styles.overviewStats}>
+                <View style={styles.overviewStat}>
+                  <Text style={styles.overviewStatValue}>
+                    {workouts.length}
+                  </Text>
+                  <Text style={styles.overviewStatLabel}>All Time Workouts</Text>
+                </View>
+                <View style={styles.overviewStat}>
+                  <Text style={styles.overviewStatValue}>
+                    {Object.keys(personalRecords).length}
+                  </Text>
+                  <Text style={styles.overviewStatLabel}>Personal Records</Text>
+                </View>
               </View>
             </View>
-          </View>
+          </>
         )}
 
-        <View style={styles.consistencyCard}>
-          <Text style={styles.consistencyTitle}>Workout Consistency</Text>
-          
-          <View style={styles.weekDays}>
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-              <Text key={day} style={styles.weekDayText}>{day}</Text>
-            ))}
-          </View>
+        {selectedTab === "Strength" && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Personal Records</Text>
+            </View>
 
-          <View style={styles.consistencyGrid}>
-            {Array.from({ length: 35 }, (_, i) => {
-              const date = new Date();
-              date.setDate(date.getDate() - (34 - i));
-              const dateStr = date.toDateString();
+            {Object.values(personalRecords).length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No personal records yet</Text>
+                <Text style={styles.emptyStateSubtext}>Complete workouts to track your progress</Text>
+              </View>
+            ) : (
+              Object.values(personalRecords)
+                .sort((a, b) => b.oneRepMax - a.oneRepMax)
+                .map((pr) => (
+                  <View key={pr.exerciseId} style={styles.prCard}>
+                    <View style={styles.prHeader}>
+                      <Text style={styles.prExercise}>Exercise: {pr.exerciseId}</Text>
+                      <View style={styles.prBadge}>
+                        <Text style={styles.prBadgeText}>🏆 PR</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.prValue}>
+                      {pr.weight} kg × {pr.reps} reps
+                    </Text>
+                    <View style={styles.prFooter}>
+                      <Text style={styles.prEstimate}>Est. 1RM: {pr.oneRepMax.toFixed(1)} kg</Text>
+                      <Text style={styles.prDate}>
+                        {new Date(pr.achievedAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+            )}
+          </>
+        )}
+
+        {selectedTab === "Volume" && (
+          <>
+            <View style={styles.volumeCard}>
+              <Text style={styles.volumeLabel}>Total Volume Lifted (30 Days)</Text>
+              <Text style={styles.volumeValue}>
+                {(analytics.totalVolume / 1000).toFixed(1)} kg
+              </Text>
+            </View>
+
+            <View style={styles.volumeBreakdown}>
+              <Text style={styles.sectionTitle}>Volume by Week</Text>
+              {Array.from({ length: 4 }, (_, i) => {
+                const weekStart = new Date();
+                weekStart.setDate(weekStart.getDate() - (i * 7));
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() - 7);
+
+                const weekWorkouts = workouts.filter((w) => {
+                  if (!w.completedAt) return false;
+                  const date = new Date(w.completedAt);
+                  return date >= weekEnd && date < weekStart;
+                });
+
+                const weekVolume = weekWorkouts.reduce((sum, w) => sum + w.totalVolume, 0);
+
+                return (
+                  <View key={i} style={styles.weekCard}>
+                    <View style={styles.weekHeader}>
+                      <Text style={styles.weekLabel}>Week {i + 1}</Text>
+                      <Text style={styles.weekDate}>
+                        {weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </Text>
+                    </View>
+                    <Text style={styles.weekVolume}>
+                      {(weekVolume / 1000).toFixed(1)} kg
+                    </Text>
+                    <Text style={styles.weekWorkouts}>
+                      {weekWorkouts.length} workouts
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+
+        {selectedTab === "Consistency" && (
+          <>
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Current Streak</Text>
+                <Text style={styles.statValue}>{analytics.longestStreak} Days</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>This Month</Text>
+                <Text style={styles.statValue}>{analytics.totalWorkouts}</Text>
+              </View>
+            </View>
+
+            <View style={styles.consistencyCard}>
+              <Text style={styles.consistencyTitle}>Workout Consistency (Last 5 Weeks)</Text>
               
-              const dayWorkouts = workouts.filter(
-                (w) => w.completedAt && new Date(w.completedAt).toDateString() === dateStr
-              );
-              
-              const hasWorkout = dayWorkouts.length > 0;
-              const totalVolume = dayWorkouts.reduce((sum, w) => sum + w.totalVolume, 0);
-              const intensity = hasWorkout
-                ? totalVolume > 15000
-                  ? 'high'
-                  : totalVolume > 8000
-                  ? 'medium'
-                  : 'low'
-                : 'none';
-              
-              return (
-                <View
-                  key={i}
-                  style={[
-                    styles.consistencyCell,
-                    intensity === 'high' && styles.consistencyCellHigh,
-                    intensity === 'medium' && styles.consistencyCellMedium,
-                    intensity === 'low' && styles.consistencyCellLow,
-                  ]}
-                />
-              );
-            })}
-          </View>
-        </View>
+              <View style={styles.weekDays}>
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                  <Text key={day} style={styles.weekDayText}>{day}</Text>
+                ))}
+              </View>
+
+              <View style={styles.consistencyGrid}>
+                {Array.from({ length: 35 }, (_, i) => {
+                  const date = new Date();
+                  date.setDate(date.getDate() - (34 - i));
+                  const dateStr = date.toDateString();
+                  
+                  const dayWorkouts = workouts.filter(
+                    (w) => w.completedAt && new Date(w.completedAt).toDateString() === dateStr
+                  );
+                  
+                  const hasWorkout = dayWorkouts.length > 0;
+                  const totalVolume = dayWorkouts.reduce((sum, w) => sum + w.totalVolume, 0);
+                  const intensity = hasWorkout
+                    ? totalVolume > 15000
+                      ? 'high'
+                      : totalVolume > 8000
+                      ? 'medium'
+                      : 'low'
+                    : 'none';
+                  
+                  return (
+                    <View
+                      key={i}
+                      style={[
+                        styles.consistencyCell,
+                        intensity === 'high' && styles.consistencyCellHigh,
+                        intensity === 'medium' && styles.consistencyCellMedium,
+                        intensity === 'low' && styles.consistencyCellLow,
+                      ]}
+                    />
+                  );
+                })}
+              </View>
+
+              <View style={styles.legend}>
+                <Text style={styles.legendTitle}>Intensity</Text>
+                <View style={styles.legendItems}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, styles.consistencyCellLow]} />
+                    <Text style={styles.legendText}>Low</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, styles.consistencyCellMedium]} />
+                    <Text style={styles.legendText}>Medium</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendColor, styles.consistencyCellHigh]} />
+                    <Text style={styles.legendText}>High</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.consistencyInsights}>
+              <Text style={styles.sectionTitle}>Insights</Text>
+              <View style={styles.insightCard}>
+                <Text style={styles.insightText}>
+                  You&apos;ve worked out {analytics.totalWorkouts} times in the last 30 days
+                </Text>
+              </View>
+              <View style={styles.insightCard}>
+                <Text style={styles.insightText}>
+                  Your longest streak is {analytics.longestStreak} days! Keep it up!
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -469,5 +579,174 @@ const styles = StyleSheet.create({
   },
   consistencyCellHigh: {
     backgroundColor: COLORS.primary,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+  emptyState: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 40,
+    alignItems: "center" as const,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: "center" as const,
+  },
+  prCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  prHeader: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginBottom: 12,
+  },
+  prExercise: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: COLORS.text,
+    flex: 1,
+  },
+  prFooter: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginTop: 12,
+  },
+  prEstimate: {
+    fontSize: 13,
+    fontWeight: "600" as const,
+    color: COLORS.primary,
+  },
+  prDate: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  overviewSummary: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  overviewStats: {
+    flexDirection: "row" as const,
+    gap: 20,
+  },
+  overviewStat: {
+    flex: 1,
+    alignItems: "center" as const,
+  },
+  overviewStatValue: {
+    fontSize: 32,
+    fontWeight: "700" as const,
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  overviewStatLabel: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    textAlign: "center" as const,
+    fontWeight: "500" as const,
+  },
+  volumeBreakdown: {
+    marginTop: 20,
+  },
+  weekCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  weekHeader: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    marginBottom: 8,
+  },
+  weekLabel: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: COLORS.text,
+  },
+  weekDate: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  weekVolume: {
+    fontSize: 28,
+    fontWeight: "700" as const,
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  weekWorkouts: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  legend: {
+    marginTop: 20,
+  },
+  legendTitle: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: COLORS.text,
+    marginBottom: 12,
+  },
+  legendItems: {
+    flexDirection: "row" as const,
+    gap: 16,
+  },
+  legendItem: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+  },
+  legendColor: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  consistencyInsights: {
+    marginTop: 20,
+  },
+  insightCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  insightText: {
+    fontSize: 14,
+    color: COLORS.text,
+    lineHeight: 20,
   },
 });
