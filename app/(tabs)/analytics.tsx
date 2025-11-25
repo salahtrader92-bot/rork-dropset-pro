@@ -1,16 +1,50 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import COLORS from "@/constants/colors";
-import { TrendingUp, TrendingDown, Flame, Trophy, Calendar } from "lucide-react-native";
+import { ChevronLeft, Share2, Calendar, Dumbbell, ChevronDown } from "lucide-react-native";
+import Svg, { Path } from "react-native-svg";
 
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
+  const [selectedTab, setSelectedTab] = useState<"Overview" | "Strength" | "Volume" | "Consistency">("Overview");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("Last 30 Days");
+  const [selectedFilter, setSelectedFilter] = useState<string>("All Exercises");
+
+  const tabs = ["Overview", "Strength", "Volume", "Consistency"];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Analytics</Text>
+        <TouchableOpacity style={styles.backButton}>
+          <ChevronLeft size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Performance Analytics</Text>
+        <TouchableOpacity style={styles.shareButton}>
+          <Share2 size={20} color={COLORS.text} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.tabsContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {tabs.map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[
+                styles.tab,
+                selectedTab === tab && styles.tabActive,
+              ]}
+              onPress={() => setSelectedTab(tab as any)}
+            >
+              <Text style={[
+                styles.tabText,
+                selectedTab === tab && styles.tabTextActive,
+              ]}>
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <ScrollView
@@ -18,186 +52,99 @@ export default function AnalyticsScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Month</Text>
-          
-          <View style={styles.statsGrid}>
-            <StatCard
-              icon={<Calendar size={20} color={COLORS.primary} />}
-              label="Workouts"
-              value="12"
-              change="+3"
-              isPositive={true}
-            />
-            <StatCard
-              icon={<Trophy size={20} color={COLORS.primary} />}
-              label="Total Volume"
-              value="28.5k"
-              unit="kg"
-              change="+12%"
-              isPositive={true}
-            />
-          </View>
+        <View style={styles.filtersRow}>
+          <TouchableOpacity style={styles.filterButton}>
+            <Calendar size={16} color={COLORS.text} />
+            <Text style={styles.filterText}>{selectedPeriod}</Text>
+            <ChevronDown size={16} color={COLORS.text} />
+          </TouchableOpacity>
 
-          <View style={styles.statsGrid}>
-            <StatCard
-              icon={<Flame size={20} color={COLORS.primary} />}
-              label="Streak"
-              value="7"
-              unit="days"
-              change="+2"
-              isPositive={true}
-            />
-            <StatCard
-              icon={<TrendingUp size={20} color={COLORS.primary} />}
-              label="Avg Duration"
-              value="42"
-              unit="min"
-              change="-5%"
-              isPositive={false}
-            />
+          <TouchableOpacity style={styles.filterButton}>
+            <Dumbbell size={16} color={COLORS.text} />
+            <Text style={styles.filterText}>{selectedFilter}</Text>
+            <ChevronDown size={16} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total Workouts</Text>
+            <Text style={styles.statValue}>28</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Longest Streak</Text>
+            <Text style={styles.statValue}>12 Days</Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Volume Progress</Text>
-          <View style={styles.chartCard}>
-            <View style={styles.chartPlaceholder}>
-              <View style={styles.barChart}>
-                {[65, 45, 80, 55, 70, 85, 60].map((height, index) => (
-                  <View key={index} style={styles.barContainer}>
-                    <View style={[styles.bar, { height: `${height}%` }]} />
-                    <Text style={styles.barLabel}>
-                      {['M', 'T', 'W', 'T', 'F', 'S', 'S'][index]}
-                    </Text>
-                  </View>
-                ))}
-              </View>
+        <View style={styles.volumeCard}>
+          <Text style={styles.volumeLabel}>Total Volume Lifted</Text>
+          <Text style={styles.volumeValue}>8,450 kg</Text>
+        </View>
+
+        <View style={styles.progressCard}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressTitle}>Strength Progression</Text>
+            <View style={styles.prBadge}>
+              <Text style={styles.prBadgeText}>🏆 New PR!</Text>
+            </View>
+          </View>
+          
+          <Text style={styles.exerciseName}>Bench Press</Text>
+          <Text style={styles.prValue}>105 kg</Text>
+          
+          <View style={styles.prChange}>
+            <Text style={styles.prChangeLabel}>Last 30 Days</Text>
+            <Text style={styles.prChangeValue}>↑ 5.0%</Text>
+          </View>
+
+          <View style={styles.chartContainer}>
+            <Svg width="100%" height="160" viewBox="0 0 440 160">
+              <Path
+                d="M 20 120 Q 50 80, 90 90 T 160 70 T 240 85 T 310 45 T 400 65"
+                stroke={COLORS.primary}
+                strokeWidth="3"
+                fill="none"
+                strokeLinecap="round"
+              />
+            </Svg>
+            <View style={styles.chartLabels}>
+              <Text style={styles.chartLabel}>4 Wks Ago</Text>
+              <Text style={styles.chartLabel}>2 Wks Ago</Text>
+              <Text style={styles.chartLabel}>Today</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Records</Text>
+        <View style={styles.consistencyCard}>
+          <Text style={styles.consistencyTitle}>Workout Consistency</Text>
           
-          <PRCard
-            exercise="Bench Press"
-            weight="100 kg"
-            date="Dec 22, 2024"
-            improvement="+5 kg"
-          />
-          <PRCard
-            exercise="Squat"
-            weight="140 kg"
-            date="Dec 20, 2024"
-            improvement="+10 kg"
-          />
-          <PRCard
-            exercise="Deadlift"
-            weight="180 kg"
-            date="Dec 18, 2024"
-            improvement="+15 kg"
-          />
-        </View>
+          <View style={styles.weekDays}>
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+              <Text key={day} style={styles.weekDayText}>{day}</Text>
+            ))}
+          </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Muscle Groups</Text>
-          <View style={styles.muscleGroupCard}>
-            <MuscleGroupBar label="Chest" value={85} color={COLORS.primary} />
-            <MuscleGroupBar label="Back" value={72} color={COLORS.primary} />
-            <MuscleGroupBar label="Legs" value={65} color={COLORS.primary} />
-            <MuscleGroupBar label="Shoulders" value={58} color={COLORS.primary} />
-            <MuscleGroupBar label="Arms" value={45} color={COLORS.primary} />
+          <View style={styles.consistencyGrid}>
+            {Array.from({ length: 35 }, (_, i) => {
+              const hasWorkout = [0, 4, 5, 7, 11, 12, 14, 18, 19, 21, 25, 26, 28, 32, 33].includes(i);
+              const intensity = hasWorkout ? (i % 3 === 0 ? 'high' : i % 3 === 1 ? 'medium' : 'low') : 'none';
+              
+              return (
+                <View
+                  key={i}
+                  style={[
+                    styles.consistencyCell,
+                    intensity === 'high' && styles.consistencyCellHigh,
+                    intensity === 'medium' && styles.consistencyCellMedium,
+                    intensity === 'low' && styles.consistencyCellLow,
+                  ]}
+                />
+              );
+            })}
           </View>
         </View>
       </ScrollView>
-    </View>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  unit,
-  change,
-  isPositive,
-}: {
-  icon: React.ReactElement;
-  label: string;
-  value: string;
-  unit?: string;
-  change: string;
-  isPositive: boolean;
-}) {
-  return (
-    <View style={styles.statCard}>
-      <View style={styles.statIcon}>{icon}</View>
-      <View style={styles.statContent}>
-        <Text style={styles.statLabel}>{label}</Text>
-        <View style={styles.statValueRow}>
-          <Text style={styles.statValue}>{value}</Text>
-          {unit && <Text style={styles.statUnit}>{unit}</Text>}
-        </View>
-        <View style={styles.statChange}>
-          {isPositive ? (
-            <TrendingUp size={14} color={COLORS.success} />
-          ) : (
-            <TrendingDown size={14} color={COLORS.error} />
-          )}
-          <Text style={[styles.statChangeText, { color: isPositive ? COLORS.success : COLORS.error }]}>
-            {change}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function PRCard({
-  exercise,
-  weight,
-  date,
-  improvement,
-}: {
-  exercise: string;
-  weight: string;
-  date: string;
-  improvement: string;
-}) {
-  return (
-    <View style={styles.prCard}>
-      <View style={styles.prIconContainer}>
-        <Trophy size={20} color={COLORS.warning} />
-      </View>
-      <View style={styles.prInfo}>
-        <Text style={styles.prExercise}>{exercise}</Text>
-        <Text style={styles.prDate}>{date}</Text>
-      </View>
-      <View style={styles.prWeightContainer}>
-        <Text style={styles.prWeight}>{weight}</Text>
-        <Text style={styles.prImprovement}>{improvement}</Text>
-      </View>
-    </View>
-  );
-}
-
-function MuscleGroupBar({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
-  return (
-    <View style={styles.muscleGroupRow}>
-      <Text style={styles.muscleGroupLabel}>{label}</Text>
-      <View style={styles.muscleGroupBarContainer}>
-        <View style={[styles.muscleGroupBarFill, { width: `${value}%`, backgroundColor: color }]} />
-      </View>
-      <Text style={styles.muscleGroupValue}>{value}%</Text>
     </View>
   );
 }
@@ -208,14 +155,53 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   title: {
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: "700" as const,
     color: COLORS.text,
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  tabsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  tab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 8,
+  },
+  tabActive: {
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.primary,
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: COLORS.textSecondary,
+  },
+  tabTextActive: {
+    color: COLORS.primary,
   },
   content: {
     flex: 1,
@@ -224,188 +210,186 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 24,
   },
-  section: {
-    marginBottom: 24,
+  filtersRow: {
+    flexDirection: "row" as const,
+    gap: 12,
+    marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "700" as const,
+  filterButton: {
+    flex: 1,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  filterText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600" as const,
     color: COLORS.text,
-    marginBottom: 12,
   },
   statsGrid: {
     flexDirection: "row" as const,
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 20,
   },
   statCard: {
     flex: 1,
     backgroundColor: COLORS.card,
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: COLORS.backgroundTertiary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginBottom: 12,
-  },
-  statContent: {
-    gap: 4,
-  },
   statLabel: {
-    fontSize: 11,
-    color: COLORS.textTertiary,
-    fontWeight: "600" as const,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-  },
-  statValueRow: {
-    flexDirection: "row" as const,
-    alignItems: "baseline" as const,
-    gap: 4,
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: "500" as const,
+    marginBottom: 8,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700" as const,
     color: COLORS.text,
   },
-  statUnit: {
+  volumeCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 20,
+  },
+  volumeLabel: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: "500" as const,
+    marginBottom: 8,
+  },
+  volumeValue: {
+    fontSize: 32,
+    fontWeight: "700" as const,
+    color: COLORS.text,
+  },
+  progressCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 20,
+  },
+  progressHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    marginBottom: 16,
+  },
+  progressTitle: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: COLORS.text,
+  },
+  prBadge: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  prBadgeText: {
+    fontSize: 12,
+    fontWeight: "600" as const,
+    color: COLORS.primary,
+  },
+  exerciseName: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontWeight: "500" as const,
+    marginBottom: 8,
+  },
+  prValue: {
+    fontSize: 36,
+    fontWeight: "700" as const,
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  prChange: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    marginBottom: 20,
+  },
+  prChangeLabel: {
     fontSize: 13,
     color: COLORS.textSecondary,
     fontWeight: "500" as const,
   },
-  statChange: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 4,
-    marginTop: 4,
-  },
-  statChangeText: {
+  prChangeValue: {
     fontSize: 13,
     fontWeight: "600" as const,
+    color: COLORS.primary,
   },
-  chartCard: {
+  chartContainer: {
+    marginTop: 8,
+  },
+  chartLabels: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    paddingHorizontal: 10,
+    marginTop: 8,
+  },
+  chartLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: "500" as const,
+  },
+  consistencyCard: {
     backgroundColor: COLORS.card,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  chartPlaceholder: {
-    height: 200,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-  },
-  barChart: {
-    flexDirection: "row" as const,
-    alignItems: "flex-end" as const,
-    justifyContent: "space-around" as const,
-    width: "100%" as const,
-    height: "100%" as const,
-  },
-  barContainer: {
-    flex: 1,
-    alignItems: "center" as const,
-    justifyContent: "flex-end" as const,
-    height: "100%" as const,
-  },
-  bar: {
-    width: 24,
-    backgroundColor: COLORS.primary,
-    borderRadius: 6,
-    marginBottom: 8,
-  },
-  barLabel: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: "600" as const,
-  },
-  prCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  prIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: COLORS.backgroundTertiary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginRight: 12,
-  },
-  prInfo: {
-    flex: 1,
-  },
-  prExercise: {
-    fontSize: 15,
-    fontWeight: "600" as const,
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  prDate: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-  },
-  prWeightContainer: {
-    alignItems: "flex-end" as const,
-  },
-  prWeight: {
+  consistencyTitle: {
     fontSize: 16,
-    fontWeight: "700" as const,
+    fontWeight: "600" as const,
     color: COLORS.text,
+    marginBottom: 16,
   },
-  prImprovement: {
+  weekDays: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    marginBottom: 12,
+  },
+  weekDayText: {
     fontSize: 12,
     fontWeight: "600" as const,
-    color: COLORS.success,
-  },
-  muscleGroupCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: 16,
-  },
-  muscleGroupRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 12,
-  },
-  muscleGroupLabel: {
-    fontSize: 14,
-    fontWeight: "600" as const,
-    color: COLORS.text,
-    width: 80,
-  },
-  muscleGroupBarContainer: {
-    flex: 1,
-    height: 8,
-    backgroundColor: COLORS.backgroundTertiary,
-    borderRadius: 4,
-    overflow: "hidden" as const,
-  },
-  muscleGroupBarFill: {
-    height: "100%" as const,
-    borderRadius: 4,
-  },
-  muscleGroupValue: {
-    fontSize: 14,
-    fontWeight: "600" as const,
     color: COLORS.textSecondary,
-    width: 40,
-    textAlign: "right" as const,
+    width: 32,
+    textAlign: "center" as const,
+  },
+  consistencyGrid: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: 4,
+  },
+  consistencyCell: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: COLORS.backgroundTertiary,
+  },
+  consistencyCellLow: {
+    backgroundColor: "rgba(0, 255, 135, 0.2)",
+  },
+  consistencyCellMedium: {
+    backgroundColor: "rgba(0, 255, 135, 0.5)",
+  },
+  consistencyCellHigh: {
+    backgroundColor: COLORS.primary,
   },
 });

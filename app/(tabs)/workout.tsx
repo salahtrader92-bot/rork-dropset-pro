@@ -5,10 +5,11 @@ import { useRouter } from "expo-router";
 import { useAppState } from "@/providers/AppStateProvider";
 import { useWorkouts } from "@/providers/WorkoutProvider";
 import COLORS from "@/constants/colors";
-import { Plus, Dumbbell, TrendingUp, CalendarDays, Clock, Search } from "lucide-react-native";
+import { Plus, Dumbbell, Clock, Search, Menu, User, Play } from "lucide-react-native";
 import { EXERCISES } from "@/constants/exercises";
 import { Exercise, WorkoutExercise } from "@/types";
 import { generateId } from "@/utils/calculations";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function WorkoutScreen() {
   const insets = useSafeAreaInsets();
@@ -50,15 +51,20 @@ export default function WorkoutScreen() {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesMuscle = selectedMuscle === "All" || exercise.muscleGroup.toLowerCase() === selectedMuscle.toLowerCase();
     return matchesSearch && matchesMuscle;
-  });
+  }).slice(0, 6);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.date}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</Text>
-          <Text style={styles.greeting}>Today</Text>
-        </View>
+        <TouchableOpacity style={styles.menuButton}>
+          <Menu size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => router.push("/(tabs)/profile" as never)}
+        >
+          <User size={20} color={COLORS.text} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -66,138 +72,83 @@ export default function WorkoutScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {activeWorkout && (
-          <TouchableOpacity
-            style={styles.activeWorkoutCard}
-            onPress={() => router.push("/workout-session" as never)}
-            testID="continue-workout-button"
-          >
-            <View style={styles.activeWorkoutHeader}>
-              <View style={styles.activeWorkoutBadge}>
-                <View style={styles.pulseDot} />
-                <Text style={styles.activeWorkoutBadgeText}>In Progress</Text>
-              </View>
-            </View>
-            <Text style={styles.activeWorkoutTitle}>Continue Workout</Text>
-            <View style={styles.activeWorkoutStats}>
-              <View style={styles.activeWorkoutStat}>
-                <Clock size={16} color={COLORS.textSecondary} />
-                <Text style={styles.activeWorkoutStatText}>
-                  {Math.floor((Date.now() - new Date(activeWorkout.startedAt).getTime()) / 60000)}m
-                </Text>
-              </View>
-              <View style={styles.activeWorkoutStat}>
-                <Dumbbell size={16} color={COLORS.textSecondary} />
-                <Text style={styles.activeWorkoutStatText}>
-                  {activeWorkout.exercises.length} exercises
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.greeting}>Hello, {profile?.name?.split(" ")[0] || "Alex"}!</Text>
 
-        <View style={styles.searchSection}>
-          <View style={styles.searchBar}>
-            <Search size={20} color={COLORS.textTertiary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search exercises..."
-              placeholderTextColor={COLORS.textTertiary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
+        <View style={styles.progressCard}>
+          <Text style={styles.progressTitle}>Weekly Progress</Text>
+          <Text style={styles.progressSubtitle}>3 of 5 Workouts Done</Text>
+          <Text style={styles.progressDays}>2 Days Remaining</Text>
+          
+          <View style={styles.goalRow}>
+            <Text style={styles.goalLabel}>Weekly Goal</Text>
+            <Text style={styles.goalPercentage}>60%</Text>
+          </View>
+          
+          <View style={styles.progressBar}>
+            <View style={[styles.progressBarFill, { width: "60%" }]} />
           </View>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.muscleFilterContainer}
-          contentContainerStyle={styles.muscleFilterContent}
-        >
-          {muscleGroups.map((muscle) => (
-            <TouchableOpacity
-              key={muscle}
-              style={[
-                styles.muscleFilterChip,
-                selectedMuscle === muscle && styles.muscleFilterChipActive,
-              ]}
-              onPress={() => setSelectedMuscle(muscle)}
+        <View style={styles.workoutCard}>
+          <View style={styles.workoutImageContainer}>
+            <LinearGradient
+              colors={['rgba(26, 75, 65, 0.8)', 'rgba(26, 75, 65, 0.3)']}
+              style={styles.workoutGradient}
             >
-              <Text
-                style={[
-                  styles.muscleFilterText,
-                  selectedMuscle === muscle && styles.muscleFilterTextActive,
-                ]}
-              >
-                {muscle}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+              <View style={styles.decorativeCircle1} />
+              <View style={styles.decorativeCircle2} />
+              <View style={styles.decorativeCircle3} />
+            </LinearGradient>
+          </View>
+          
+          <View style={styles.workoutContent}>
+            <Text style={styles.workoutLabel}>Today's Workout</Text>
+            <Text style={styles.workoutTitle}>Push Day A</Text>
+            <Text style={styles.workoutExercises}>
+              Bench Press, Overhead Press, Tricep Pushdown...
+            </Text>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.startButton}
+            onPress={handleStartWorkout}
+          >
+            <Play size={16} color={COLORS.background} fill={COLORS.background} />
+            <Text style={styles.startButtonText}>Start Workout</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Exercises</Text>
-            <Text style={styles.exerciseCount}>{filteredExercises.length}</Text>
-          </View>
-          <FlatList
-            data={filteredExercises}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <ExerciseCard exercise={item} onAdd={() => handleAddExercise(item)} />
-            )}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          />
+          <Text style={styles.sectionTitle}>Upcoming Exercises</Text>
+          
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.exercisesRow}
+          >
+            {filteredExercises.slice(0, 4).map((exercise) => (
+              <TouchableOpacity 
+                key={exercise.id} 
+                style={styles.exercisePreviewCard}
+                onPress={() => handleAddExercise(exercise)}
+              >
+                <Image 
+                  source={{ uri: exercise.photo }} 
+                  style={styles.exercisePreviewImage}
+                />
+                <View style={styles.exercisePreviewOverlay}>
+                  <Text style={styles.exercisePreviewName} numberOfLines={2}>
+                    {exercise.name}
+                  </Text>
+                  <Text style={styles.exercisePreviewMeta}>
+                    3 sets, 8-12 reps
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       </ScrollView>
-    </View>
-  );
-}
-
-function ExerciseCard({ exercise, onAdd }: { exercise: Exercise; onAdd: () => void }) {
-  return (
-    <View style={styles.exerciseCard}>
-      <Image source={{ uri: exercise.photo }} style={styles.exerciseImage} />
-      <View style={styles.exerciseInfo}>
-        <Text style={styles.exerciseName} numberOfLines={1}>
-          {exercise.name}
-        </Text>
-        <View style={styles.exerciseMeta}>
-          <View style={styles.exerciseMetaBadge}>
-            <Text style={styles.exerciseMetaText}>
-              {exercise.muscleGroup.charAt(0).toUpperCase() + exercise.muscleGroup.slice(1)}
-            </Text>
-          </View>
-          <View style={styles.exerciseMetaBadge}>
-            <Text style={styles.exerciseMetaText}>
-              {exercise.equipment.charAt(0).toUpperCase() + exercise.equipment.slice(1)}
-            </Text>
-          </View>
-          {exercise.difficulty && (
-            <View style={[
-              styles.exerciseMetaBadge,
-              exercise.difficulty === "beginner" && styles.difficultyBeginner,
-              exercise.difficulty === "intermediate" && styles.difficultyIntermediate,
-              exercise.difficulty === "advanced" && styles.difficultyAdvanced,
-            ]}>
-              <Text style={[
-                styles.exerciseMetaText,
-                exercise.difficulty === "beginner" && styles.difficultyBeginnerText,
-                exercise.difficulty === "intermediate" && styles.difficultyIntermediateText,
-                exercise.difficulty === "advanced" && styles.difficultyAdvancedText,
-              ]}>
-                {exercise.difficulty.charAt(0).toUpperCase() + exercise.difficulty.slice(1)}
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-      <TouchableOpacity style={styles.addButton} onPress={onAdd}>
-        <Plus size={20} color={COLORS.primary} strokeWidth={2.5} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -208,20 +159,28 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
-  date: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: "500" as const,
-    marginBottom: 4,
+  menuButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: COLORS.card,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
-  greeting: {
-    fontSize: 28,
-    fontWeight: "700" as const,
-    color: COLORS.text,
+  profileButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.card,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   content: {
     flex: 1,
@@ -230,238 +189,187 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 24,
   },
-  startWorkoutCard: {
+  greeting: {
+    fontSize: 32,
+    fontWeight: "700" as const,
+    color: COLORS.text,
+    marginBottom: 24,
+  },
+  progressCard: {
     backgroundColor: COLORS.card,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  startWorkoutIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: COLORS.backgroundTertiary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginRight: 16,
-  },
-  startWorkoutText: {
-    fontSize: 17,
-    fontWeight: "600" as const,
+  progressTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
     color: COLORS.text,
+    marginBottom: 8,
   },
-  activeWorkoutCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+  progressSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
   },
-  activeWorkoutHeader: {
+  progressDays: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: 16,
+  },
+  goalRow: {
     flexDirection: "row" as const,
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  activeWorkoutBadge: {
+  goalLabel: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: COLORS.text,
+  },
+  goalPercentage: {
+    fontSize: 14,
+    fontWeight: "700" as const,
+    color: COLORS.text,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: COLORS.backgroundTertiary,
+    borderRadius: 4,
+    overflow: "hidden" as const,
+  },
+  progressBarFill: {
+    height: "100%" as const,
+    backgroundColor: COLORS.primary,
+    borderRadius: 4,
+  },
+  workoutCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 20,
+    overflow: "hidden" as const,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  workoutImageContainer: {
+    height: 200,
+    position: "relative" as const,
+  },
+  workoutGradient: {
+    flex: 1,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+  },
+  decorativeCircle1: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(76, 120, 100, 0.4)",
+    position: "absolute" as const,
+    top: 40,
+    left: 60,
+  },
+  decorativeCircle2: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(100, 150, 130, 0.3)",
+    position: "absolute" as const,
+    bottom: 60,
+    right: 80,
+  },
+  decorativeCircle3: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(120, 170, 145, 0.25)",
+    position: "absolute" as const,
+    bottom: 30,
+    right: 30,
+  },
+  workoutContent: {
+    padding: 20,
+    paddingBottom: 16,
+  },
+  workoutLabel: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: "500" as const,
+    marginBottom: 4,
+  },
+  workoutTitle: {
+    fontSize: 24,
+    fontWeight: "700" as const,
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  workoutExercises: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  startButton: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    gap: 6,
-  },
-  pulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    justifyContent: "center" as const,
     backgroundColor: COLORS.primary,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
   },
-  activeWorkoutBadgeText: {
-    fontSize: 12,
-    fontWeight: "600" as const,
-    color: COLORS.primary,
+  startButtonText: {
+    fontSize: 16,
+    fontWeight: "700" as const,
+    color: COLORS.background,
   },
-  activeWorkoutTitle: {
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
     fontSize: 20,
     fontWeight: "700" as const,
     color: COLORS.text,
-    marginBottom: 12,
-  },
-  activeWorkoutStats: {
-    flexDirection: "row" as const,
-    gap: 16,
-  },
-  activeWorkoutStat: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 6,
-  },
-  activeWorkoutStatText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: "500" as const,
-  },
-  section: {
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "700" as const,
-    color: COLORS.text,
-    marginBottom: 12,
-  },
-  statsGrid: {
-    flexDirection: "row" as const,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: COLORS.backgroundTertiary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginBottom: 12,
-  },
-  searchSection: {
     marginBottom: 16,
   },
-  searchBar: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.text,
-    fontWeight: "500" as const,
-  },
-  muscleFilterContainer: {
-    marginBottom: 20,
-  },
-  muscleFilterContent: {
-    gap: 8,
+  exercisesRow: {
+    gap: 16,
     paddingRight: 20,
   },
-  muscleFilterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  muscleFilterChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  muscleFilterText: {
-    fontSize: 14,
-    fontWeight: "600" as const,
-    color: COLORS.textSecondary,
-  },
-  muscleFilterTextActive: {
-    color: "#000",
-  },
-  sectionHeader: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-    marginBottom: 12,
-  },
-  exerciseCount: {
-    fontSize: 14,
-    fontWeight: "600" as const,
-    color: COLORS.textTertiary,
-  },
-  exerciseCard: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    backgroundColor: COLORS.card,
+  exercisePreviewCard: {
+    width: 160,
+    height: 220,
     borderRadius: 16,
-    padding: 12,
+    overflow: "hidden" as const,
+    backgroundColor: COLORS.card,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  exerciseImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+  exercisePreviewImage: {
+    width: "100%" as const,
+    height: "100%" as const,
     backgroundColor: COLORS.backgroundTertiary,
   },
-  exerciseInfo: {
-    flex: 1,
-    marginLeft: 12,
+  exercisePreviewOverlay: {
+    position: "absolute" as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    backgroundColor: "rgba(10, 22, 18, 0.9)",
   },
-  exerciseName: {
-    fontSize: 16,
-    fontWeight: "600" as const,
+  exercisePreviewName: {
+    fontSize: 14,
+    fontWeight: "700" as const,
     color: COLORS.text,
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  exerciseMeta: {
-    flexDirection: "row" as const,
-    flexWrap: "wrap" as const,
-    gap: 6,
-  },
-  exerciseMetaBadge: {
-    backgroundColor: COLORS.backgroundTertiary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  exerciseMetaText: {
+  exercisePreviewMeta: {
     fontSize: 11,
-    fontWeight: "600" as const,
     color: COLORS.textSecondary,
-  },
-  difficultyBeginner: {
-    backgroundColor: "rgba(34, 197, 94, 0.1)",
-  },
-  difficultyBeginnerText: {
-    color: "#22c55e",
-  },
-  difficultyIntermediate: {
-    backgroundColor: "rgba(234, 179, 8, 0.1)",
-  },
-  difficultyIntermediateText: {
-    color: "#eab308",
-  },
-  difficultyAdvanced: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-  },
-  difficultyAdvancedText: {
-    color: "#ef4444",
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.backgroundTertiary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginLeft: 12,
   },
 });
