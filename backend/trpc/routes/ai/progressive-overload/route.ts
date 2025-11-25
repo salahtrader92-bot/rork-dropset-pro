@@ -1,4 +1,4 @@
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "@/backend/trpc/create-context";
 import { z } from "zod";
 import { generateText } from "@rork-ai/toolkit-sdk";
 
@@ -24,7 +24,7 @@ export const progressiveOverloadProcedure = publicProcedure
     const { exerciseName, recentSets, sleepQuality, stressLevel, recoveryScore } = input;
 
     const setsSummary = recentSets
-      .map((set) => `${set.weight}kg x ${set.reps} reps${set.rpe ? ` @ RPE ${set.rpe}` : ""}`)
+      .map((set: { weight: number; reps: number; rpe?: number }) => `${set.weight}kg x ${set.reps} reps${set.rpe ? ` @ RPE ${set.rpe}` : ""}`)
       .join("\n");
 
     const prompt = `You are a strength training expert. Analyze this training data and predict the optimal weight for the next workout.

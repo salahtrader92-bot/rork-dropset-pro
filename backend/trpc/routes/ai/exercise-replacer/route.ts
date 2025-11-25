@@ -1,4 +1,4 @@
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "@/backend/trpc/create-context";
 import { z } from "zod";
 import { generateText } from "@rork-ai/toolkit-sdk";
 

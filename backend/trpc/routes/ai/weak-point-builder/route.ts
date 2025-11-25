@@ -1,4 +1,4 @@
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "@/backend/trpc/create-context";
 import { z } from "zod";
 import { generateText } from "@rork-ai/toolkit-sdk";
 
@@ -20,7 +20,7 @@ export const weakPointBuilderProcedure = publicProcedure
     const { trainingHistory, userGoal } = input;
 
     const historySummary = trainingHistory
-      .map((item) => `${item.muscleGroup}: ${item.volume}kg volume, ${item.frequency}x/week`)
+      .map((item: { muscleGroup: string; volume: number; frequency: number }) => `${item.muscleGroup}: ${item.volume}kg volume, ${item.frequency}x/week`)
       .join("\n");
 
     const prompt = `You are an elite strength coach. Analyze this training history and identify weak points.

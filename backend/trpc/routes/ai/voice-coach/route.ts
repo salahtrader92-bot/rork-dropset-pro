@@ -1,4 +1,4 @@
-import { publicProcedure } from "../../create-context";
+import { publicProcedure } from "@/backend/trpc/create-context";
 import { z } from "zod";
 import { generateText } from "@rork-ai/toolkit-sdk";
 
@@ -18,7 +18,7 @@ export const voiceCoachProcedure = publicProcedure
   .mutation(async ({ input }) => {
     const { command, context, coachStyle = "motivational" } = input;
 
-    const stylePrompts = {
+    const stylePrompts: Record<string, string> = {
       military: "Respond like a strict military drill sergeant",
       motivational: "Respond like an enthusiastic, supportive coach",
       calm: "Respond like a calm, scientific trainer",
@@ -26,7 +26,7 @@ export const voiceCoachProcedure = publicProcedure
       humorous: "Respond like a funny, sarcastic gym buddy",
     };
 
-    const prompt = `You are a voice-activated gym coach. ${stylePrompts[coachStyle]}.
+    const prompt = `You are a voice-activated gym coach. ${stylePrompts[coachStyle] || stylePrompts.motivational}.
 
 User command: "${command}"
 
