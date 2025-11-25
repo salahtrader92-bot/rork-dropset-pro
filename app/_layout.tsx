@@ -6,17 +6,16 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppStateProvider, useAppState } from "@/providers/AppStateProvider";
 import { WorkoutProvider } from "@/providers/WorkoutProvider";
 import { GamificationProvider } from "@/providers/GamificationProvider";
-import * as SystemUI from "expo-system-ui";
-import COLORS from "@/constants/colors";
+import { ThemeProvider, useTheme } from "@/providers/ThemeProvider";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 SplashScreen.preventAutoHideAsync();
-SystemUI.setBackgroundColorAsync(COLORS.background);
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   const { isOnboarded, isLoading } = useAppState();
+  const { colors } = useTheme();
   const segments = useSegments();
   const router = useRouter();
 
@@ -43,11 +42,11 @@ function RootLayoutNav() {
       screenOptions={{
         headerBackTitle: "Back",
         headerStyle: {
-          backgroundColor: COLORS.background,
+          backgroundColor: colors.background,
         },
-        headerTintColor: COLORS.text,
+        headerTintColor: colors.text,
         contentStyle: {
-          backgroundColor: COLORS.background,
+          backgroundColor: colors.background,
         },
       }}
     >
@@ -62,13 +61,15 @@ export default function RootLayout() {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView style={{ flex: 1 }}>
-          <AppStateProvider>
-            <WorkoutProvider>
-              <GamificationProvider>
-                <RootLayoutNav />
-              </GamificationProvider>
-            </WorkoutProvider>
-          </AppStateProvider>
+          <ThemeProvider>
+            <AppStateProvider>
+              <WorkoutProvider>
+                <GamificationProvider>
+                  <RootLayoutNav />
+                </GamificationProvider>
+              </WorkoutProvider>
+            </AppStateProvider>
+          </ThemeProvider>
         </GestureHandlerRootView>
       </QueryClientProvider>
     </trpc.Provider>
